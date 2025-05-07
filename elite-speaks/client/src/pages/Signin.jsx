@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.jpg';
 import Background from '../assets/background.jpg';
 
 const Signin = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -11,6 +12,7 @@ const Signin = () => {
   });
 
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
@@ -24,15 +26,61 @@ const Signin = () => {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const validationErrors = validate();
+    
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
     } else {
       setErrors({});
-      // Submit form data to API here
-      console.log('Form submitted:', formData);
+      setIsSubmitting(true);
+      
+      try {
+        const response = await fetch('http://localhost:5000/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password
+          })
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+          // Successful login
+          alert('Signin successful');
+          console.log('Login successful:', data);
+          
+          // Store user data and JWT token in storage
+          const userData = {
+            user: data.user,
+            token: data.token
+          };
+          
+          // Store in appropriate storage based on "Remember Me"
+          if (formData.rememberMe) {
+            localStorage.setItem('userData', JSON.stringify(userData));
+          } else {
+            sessionStorage.setItem('userData', JSON.stringify(userData));
+          }
+          
+          // Redirect to dashboard/home page after successful login
+          navigate('/home');
+        } else {
+          // Failed login
+          console.error('Login failed:', data);
+          setErrors({ form: data.message || 'Invalid email or password' });
+        }
+      } catch (error) {
+        console.error('Error during login:', error);
+        setErrors({ form: 'Network error. Please check your connection and try again.' });
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -43,8 +91,6 @@ const Signin = () => {
       backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat'
     }}>
-
-
       <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full bg-white bg-opacity-90 backdrop-blur-md rounded-2xl shadow-lg p-8">
           <div className="text-center mb-8">
@@ -53,6 +99,11 @@ const Signin = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {errors.form && (
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+                <p className="text-red-700 text-sm">{errors.form}</p>
+              </div>
+            )}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700" style={{ fontFamily: '"SF Pro", system-ui, sans-serif' }}>Email Address</label>
               <input
@@ -106,10 +157,11 @@ const Signin = () => {
             <div>
               <button
                 type="submit"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                disabled={isSubmitting}
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                 style={{ fontFamily: '"SF Pro", system-ui, sans-serif' }}
               >
-                Sign in
+                {isSubmitting ? 'Signing in...' : 'Sign in'}
               </button>
             </div>
           </form>
