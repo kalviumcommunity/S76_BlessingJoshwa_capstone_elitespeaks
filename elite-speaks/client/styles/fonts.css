@@ -1,0 +1,37 @@
+/* Import Inria Serif from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inria+Serif:wght@300;400;700&display=swap');
+
+/* Import SF Pro */
+@font-face {
+  font-family: 'SF Pro';
+  src: local('SF Pro'), local('SFPro'),
+       url('https://applesocial.s3.amazonaws.com/assets/styles/fonts/sanfrancisco/sanfranciscodisplay-regular-webfont.woff') format('woff');
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'SF Pro';
+  src: local('SF Pro Medium'), local('SFPro-Medium'),
+       url('https://applesocial.s3.amazonaws.com/assets/styles/fonts/sanfrancisco/sanfranciscodisplay-medium-webfont.woff') format('woff');
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: 'SF Pro';
+  src: local('SF Pro Bold'), local('SFPro-Bold'),
+       url('https://applesocial.s3.amazonaws.com/assets/styles/fonts/sanfrancisco/sanfranciscodisplay-bold-webfont.woff') format('woff');
+  font-weight: 700;
+}
+
+:root {
+  --font-serif: 'Inria Serif', serif;
+  --font-sans: 'SF Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+.font-sans {
+  font-family: var(--font-sans);
+}
