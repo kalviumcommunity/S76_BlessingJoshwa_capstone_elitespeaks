@@ -6,6 +6,7 @@ import Background from '../assets/background.jpg';
 const Signup = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
+    username: '', // New username field
     name: '',
     email: '',
     password: '',
@@ -20,6 +21,11 @@ const Signup = () => {
 
   const validate = () => {
     const newErrors = {};
+    if (!formData.username) newErrors.username = 'Username is required';
+    else if (formData.username.length < 3) newErrors.username = 'Username must be at least 3 characters';
+    else if (!/^[a-zA-Z0-9._]+$/.test(formData.username)) 
+      newErrors.username = 'Username can only contain letters, numbers, dots and underscores';
+    
     if (!formData.name) newErrors.name = 'Name is required';
     if (!formData.email) newErrors.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid';
@@ -46,7 +52,8 @@ const Signup = () => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            username: formData.name,
+            username: formData.username, // Send the username
+            name: formData.name,
             email: formData.email,
             password: formData.password
           })
@@ -88,6 +95,27 @@ const Signup = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* New Username Field */}
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700">Username</label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                  @
+                </span>
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  className="pl-8 mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  value={formData.username}
+                  onChange={handleChange}
+                  placeholder="your_username"
+                />
+              </div>
+              {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username}</p>}
+              <p className="text-xs text-gray-500 mt-1">This will be your unique identifier (like an Instagram handle)</p>
+            </div>
+
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700">Full Name</label>
               <input

@@ -6,7 +6,7 @@ import Background from '../assets/background.jpg';
 const Signin = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    email: '',
+    identifier: '', // Changed from email to identifier (can be email or username)
     password: '',
     rememberMe: false
   });
@@ -21,7 +21,7 @@ const Signin = () => {
 
   const validate = () => {
     const newErrors = {};
-    if (!formData.email) newErrors.email = 'Email is required';
+    if (!formData.identifier) newErrors.identifier = 'Email or username is required';
     if (!formData.password) newErrors.password = 'Password is required';
     return newErrors;
   };
@@ -43,7 +43,7 @@ const Signin = () => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            email: formData.email,
+            identifier: formData.identifier, // Send identifier instead of email
             password: formData.password
           })
         });
@@ -105,17 +105,18 @@ const Signin = () => {
               </div>
             )}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700" style={{ fontFamily: '"SF Pro", system-ui, sans-serif' }}>Email Address</label>
+              <label htmlFor="identifier" className="block text-sm font-medium text-gray-700" style={{ fontFamily: '"SF Pro", system-ui, sans-serif' }}>Email or Username</label>
               <input
-                id="email"
-                name="email"
-                type="email"
+                id="identifier"
+                name="identifier"
+                type="text"
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 style={{ fontFamily: '"SF Pro", system-ui, sans-serif' }}
-                value={formData.email}
+                value={formData.identifier}
                 onChange={handleChange}
+                placeholder="email@example.com or @username"
               />
-              {errors.email && <p className="text-red-500 text-xs mt-1" style={{ fontFamily: '"SF Pro", system-ui, sans-serif' }}>{errors.email}</p>}
+              {errors.identifier && <p className="text-red-500 text-xs mt-1" style={{ fontFamily: '"SF Pro", system-ui, sans-serif' }}>{errors.identifier}</p>}
             </div>
 
             <div>

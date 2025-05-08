@@ -1,72 +1,19 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/user');
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken'); // Import JWT
-const dotenv = require('dotenv');
-
-// Load environment variables
-dotenv.config();
-
-// Signup Route
-router.post('/signup', async (req, res) => {
-  console.log('Received signup request:', req.body);
-  const { username, email, password } = req.body;
-
-  try {
-    const existingUser = await User.findOne({ email });
-    if (existingUser) return res.status(400).json({ message: "User already exists" });
-
-    // Hash the password
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-    console.log('Hashed password:', hashedPassword);
-
-    // Create new user with hashed password
-    const newUser = new User({
-      username,
-      email,
-      password: hashedPassword
-    });
-    
-    await newUser.save();
-    
-    // Check what was saved
-    const savedUser = await User.findOne({ email });
-    console.log('Saved user password:', savedUser.password);
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: newUser._id },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRY || '7d' }
-    );
-
-    // Don't send the password back in the response
-    const userResponse = {
-      _id: newUser._id,
-      username: newUser.username,
-      email: newUser.email,
-    };
-
-    res.status(201).json({ 
-      message: "User created successfully", 
-      user: userResponse,
-      token 
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server Error" });
-  }
-});
+const jwt = require('jsonwebtoken');
+const User = require('../models/user');
 
 // Login Route
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+  const { identifier, password } = req.body;
 
   try {
-    // Find user by email
-    const user = await User.findOne({ email });
+    // Find user by email or username
+    const user = await User.findOne({
+      $or: [{ email: identifier }, { username: identifier }]
+    });
+    
     if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
     // Compare submitted password with stored hash
@@ -83,6 +30,7 @@ router.post('/login', async (req, res) => {
     // Don't send password in response
     const userResponse = {
       _id: user._id,
+      name: user.name,
       username: user.username,
       email: user.email,
     };
@@ -98,4 +46,59 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Signup Route
+router.post('/signup', async (req, res) => {
+  console.log('Received signup request:', req.body);
+  const { username, name, email, password } = req.body;
+
+  try {
+    // Check if email already exists
+    const existingEmail = await User.findOne({ email });
+    if (existingEmail) return res.status(400).json({ message: "Email already in use" });
+    
+    // Check if username already exists
+    const existingUsername = await User.findOne({ username });
+    if (existingUsername) return res.status(400).json({ message: "Username already taken" });
+
+    // Hash the password
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // Create new user with hashed password
+    const newUser = new User({
+      username,
+      name,
+      email,
+      password: hashedPassword
+    });
+    
+    await newUser.save();
+    
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: newUser._id },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRY || '7d' }
+    );
+
+    // Don't send the password back in the response
+    const userResponse = {
+      _id: newUser._id,
+      username: newUser.username,
+      name: newUser.name,
+      email: newUser.email,
+    };
+
+    res.status(201).json({ 
+      message: "User created successfully", 
+      user: userResponse,
+      token 
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
+// Don't forget to export the router
 module.exports = router;
