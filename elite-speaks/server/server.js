@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const { connectDB } = require('./database');
 const dotenv = require('dotenv');
+const passport = require('./config/Passport');
+const session = require('express-session');
 
 // Load environment variables
 dotenv.config();
@@ -12,7 +14,22 @@ const port = process.env.PORT || 5000;
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  credentials: true, // Allow cookies to be sent across domains
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Session middleware for passport
+app.use(session({
+  secret: process.env.JWT_SECRET || 'elite-speaks-secret',
+  resave: false,
+  saveUninitialized: false
+}));
+
+// Initialize passport
+app.use(passport.initialize());
 
 // Connect to Database
 connectDB();
