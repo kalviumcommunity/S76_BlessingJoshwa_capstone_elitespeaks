@@ -79,6 +79,14 @@ const Signup = () => {
       }
     }
   };
+  // Google Sign Up function
+  const handleGoogleSignUp = () => {
+    // Show a brief loading message or spinner
+    setIsSubmitting(true);
+    console.log('Redirecting to Google authentication...');
+    // Redirect to Google auth endpoint
+    window.location.href = 'http://localhost:5000/api/auth/google';
+  };
 
   return (
     <div
@@ -202,6 +210,7 @@ const Signup = () => {
             <div className="mt-6">
               <button
                 type="button"
+                onClick={handleGoogleSignUp}
                 className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
                 <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">

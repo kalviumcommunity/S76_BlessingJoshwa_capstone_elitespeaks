@@ -18,9 +18,17 @@ const userSchema = new mongoose.Schema({
     unique: true 
   },
   password: { 
-    type: String, 
-    required: true 
+    type: String,
+    // Only required if not using Google auth
+    required: function() {
+      return !this.googleId;
+    }
   },
+  googleId: {
+    type: String,
+    sparse: true,
+    unique: true
+  }
   // Any other fields you have
 }, { timestamps: true });
 

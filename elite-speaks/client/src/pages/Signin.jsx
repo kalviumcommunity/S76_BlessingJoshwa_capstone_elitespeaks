@@ -1,18 +1,85 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import logo from '../assets/logo.jpg';
+import React, { useState, useContext, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Background from '../assets/background.jpg';
+import { AuthContext } from '../context/AuthContext';
 
 const Signin = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useContext(AuthContext);
+  
   const [formData, setFormData] = useState({
-    identifier: '', // Changed from email to identifier (can be email or username)
+    identifier: '',
     password: '',
     rememberMe: false
   });
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [googleAuthProcessing, setGoogleAuthProcessing] = useState(false);
+
+  useEffect(() => {
+    // Clear any previous errors when component loads
+    setErrors({});
+
+    // Check for Google auth parameters from URL
+    const query = new URLSearchParams(location.search);
+    const googleAuthSuccess = query.get('google_auth') === 'success';
+    const token = query.get('token');
+    const userDataParam = query.get('userData');
+    
+    // Debug information about the query parameters
+    console.log('Signin: Checking URL parameters:', { 
+      googleAuthSuccess, 
+      hasToken: !!token, 
+      hasUserData: !!userDataParam 
+    });
+    
+    // If we have all the needed parameters for Google Auth
+    if (googleAuthSuccess && token && userDataParam) {
+      setGoogleAuthProcessing(true);
+      
+      try {
+        // Decode and parse the user data
+        const parsedUser = JSON.parse(decodeURIComponent(userDataParam));
+        
+        console.log("Processing Google auth login for:", parsedUser.email);
+        
+        // Save to context and storage
+        login({ 
+          token: token, 
+          user: parsedUser 
+        }, formData.rememberMe);
+        
+        // Navigate to home page after a short delay
+        setTimeout(() => {
+          navigate('/home');
+        }, 100);
+      } catch (error) {
+        console.error('Error processing Google authentication data:', error);
+        setErrors({ form: 'Error processing authentication data. Please try again.' });
+        setGoogleAuthProcessing(false);
+      }
+    } 
+    // Handle case where google_auth=success but missing data
+    else if (googleAuthSuccess && (!token || !userDataParam)) {
+      console.error('Google auth redirect is missing token or user data');
+      console.error('Available parameters:', { ...Object.fromEntries(query.entries()) });
+      setErrors({ 
+        form: 'Authentication data incomplete. Please try signing in again.' 
+      });
+    }
+    
+    // Check for error messages
+    const errorParam = query.get('error');
+    const errorMessage = query.get('message');
+    if (errorParam) {
+      console.error('Auth error from callback:', errorParam, errorMessage);
+      setErrors({ 
+        form: errorMessage || 'Authentication failed. Please try again.' 
+      });
+    }
+  }, [navigate, login, location.search]);
 
   const handleChange = (e) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
@@ -43,7 +110,7 @@ const Signin = () => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            identifier: formData.identifier, // Send identifier instead of email
+            identifier: formData.identifier,
             password: formData.password
           })
         });
@@ -52,23 +119,15 @@ const Signin = () => {
         
         if (response.ok) {
           // Successful login
-          alert('Signin successful');
-          console.log('Login successful:', data);
+          console.log('Login successful');
           
-          // Store user data and JWT token in storage
-          const userData = {
+          // Use the AuthContext login function
+          login({
             user: data.user,
             token: data.token
-          };
+          }, formData.rememberMe);
           
-          // Store in appropriate storage based on "Remember Me"
-          if (formData.rememberMe) {
-            localStorage.setItem('userData', JSON.stringify(userData));
-          } else {
-            sessionStorage.setItem('userData', JSON.stringify(userData));
-          }
-          
-          // Redirect to dashboard/home page after successful login
+          // Redirect to home page after successful login
           navigate('/home');
         } else {
           // Failed login
@@ -83,6 +142,29 @@ const Signin = () => {
       }
     }
   };
+  const handleGoogleSignIn = () => {
+    console.log('Initiating Google sign-in');
+    setErrors({});
+    setGoogleAuthProcessing(true);
+    window.location.href = 'http://localhost:5000/api/auth/google';
+  };
+
+  // Show loading indicator during Google auth processing
+  if (googleAuthProcessing) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center" style={{
+        backgroundImage: `url(${Background})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+      }}>
+        <div className="bg-white bg-opacity-90 rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <h2 className="text-xl mb-2">Completing Google Authentication</h2>
+          <p className="text-gray-600">Please wait while we sign you in...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col" style={{
@@ -182,6 +264,7 @@ const Signin = () => {
             <div className="mt-6">
               <button
                 type="button"
+                onClick={handleGoogleSignIn}
                 className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
                 style={{ fontFamily: '"SF Pro", system-ui, sans-serif' }}
               >
